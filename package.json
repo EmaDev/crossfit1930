@@ -3,17 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3002",
+    "tunnel": "node scripts/tunnel.mjs",
     "build": "next build",
-    "start": "next start"
+    "start": "next start -p 3002",
+    "typecheck": "tsc --noEmit",
+    "gen-icons": "node scripts/gen-icons.mjs",
+    "gen-logo-svg": "node scripts/gen-logo-svg.mjs",
+    "admin:grant": "node --env-file=.env.local scripts/admin-grant.mjs",
+    "admin:revoke": "node --env-file=.env.local scripts/admin-revoke.mjs",
+    "seed:routines": "node --env-file=.env.local scripts/seed-routines.mjs"
   },
   "dependencies": {
+    "firebase": "^12.18.0",
+    "firebase-admin": "^14.3.0",
+    "framer-motion": "^13.1.1",
+    "lib-kit-components": "github:EmaDev/kit-componentes",
     "next": "16.3.3",
+    "next-themes": "^0.4.6",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "cloudflared": "^0.7.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

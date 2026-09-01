@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Crossfit team
 
-## Getting Started
+Base de una PWA mobile-first armada con **Next.js (App Router)** + **[lib-kit-components](https://github.com/EmaDev/kit-componentes)**,
+siguiendo la guía [`docs/guides/app-base.md`](https://github.com/EmaDev/kit-componentes/blob/main/docs/guides/app-base.md).
 
-First, run the development server:
+- **Paleta:** roja sobre negro, con tema **claro y oscuro** (`next-themes`, clase `.dark` en `<html>`).
+- **Shell:** safe areas, splash, capa PWA (instalador · offline · update), `BottomNav` de 3 rutas,
+  `FabActionSheets` con 3 acciones y centro de notificaciones (`SnackbarProvider` + `NotificationSidebar`).
+
+## Correr
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev      # http://localhost:3000
+npm run build    # build de producción
+npm run start    # servir el build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estructura
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+  app/
+    layout.tsx                 # Server · <ThemeProvider> + <ToastProvider> + fuentes + metadata/manifest
+    globals.css                # Tailwind v4 + estilos del kit + override de tokens (rojo/negro, claro+oscuro)
+    (app)/
+      layout.tsx               # Server · sólo delega en <AppShell>
+      AppShell.tsx             # Client · ÚNICO límite cliente de arriba: splash, PWA, BottomNav, FAB, drawer
+      notifications-context.tsx# Client · contexto mínimo del centro de notificaciones
+      page.tsx                 # Server · inicio (HeroTabs: Resumen / Clases / Metas)
+      actividad/page.tsx       # Server · Historial / PRs
+      perfil/page.tsx          # Server · Datos / Ajustes (selector de tema)
+  components/
+    atoms/
+      icons.tsx                # set de íconos SVG (currentColor)
+      ThemeToggle.tsx          # Client · botón claro/oscuro
+    organisms/
+      quick-actions.tsx        # Client · contenido de los 3 BottomSheet del FAB
+      home-panels.tsx          # Client · paneles de la pantalla de inicio
+      screen-header-actions.tsx# Client · campana + InstallButton + ThemeToggle para los headers
+      theme-setting.tsx        # Client · selector Sistema / Claro / Oscuro
+  lib/
+    data/home.ts               # acceso a datos (se importa sólo desde Server Components)
+public/
+  manifest.json                # display: standalone, theme_color rojo
+  sw.js                        # handler SKIP_WAITING para <UpdatePrompt>
+  favicon.ico                  # 16/32/48 en un solo .ico
+  logo.png                     # logo recortado, fondo transparente, para la UI
+  icons/                       # íconos PWA 192/512 + maskable-512
+  apple-touch-icon.png         # 180×180 para iOS
+  splash/                      # splash screens de iOS (retrato)
+assets/
+  logo.png                     # logo original: fuente de todos los assets de marca
+scripts/
+  gen-icons.mjs                # regenera íconos, favicon y splashes sin dependencias
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Marca
 
-## Learn More
+El único original es [`assets/logo.png`](assets/logo.png). Todo lo demás sale de ahí con:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run gen-icons
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+El script recorta el margen transparente del logo y escribe los íconos PWA, el maskable,
+el `apple-touch-icon`, el `favicon.ico` (16/32/48) y las splash screens de iOS.
+Los íconos van **sobre blanco** a propósito: la barra y los discos del logo son negros y
+sobre el fondo del tema oscuro desaparecerían. Si cambia el logo, reemplazá el original
+y volvé a correr el script — no hay que tocar nada más.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tema y paleta
 
-## Deploy on Vercel
+Los colores son CSS variables (`--color-primary`, `--color-surface`, …) que consume todo el kit.
+Se redefinen en [`src/app/globals.css`](src/app/globals.css):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Token             | Claro     | Oscuro    |
+| ----------------- | --------- | --------- |
+| `primary`         | `#dc2626` | `#ef4444` |
+| `surface`         | `#ffffff` | `#0a0a0a` |
+| `foreground`      | `#171717` | `#f5f5f5` |
+| `border`          | `#e5e5e5` | `#262626` |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Para editarlos en vivo desde la UI, el kit trae `ThemeConfigurator`.
+
+## Notas de la guía aplicadas
+
+- `SnackbarProvider` con `gap={80}` (64 del `BottomNav` + 16 de aire).
+- FAB con `className="pb-[4.5rem] md:pb-0"` para no pisar el `BottomNav`; se oculta mientras el drawer está abierto.
+- `SafeArea` del shell sólo con `edges={["left","right"]}` (el inset superior lo maneja cada header).
+- `NativeShell` con `onlyWhenInstalled` para no bloquear el zoom del navegador normal.
+- `layout.tsx` y `page.tsx` sin `"use client"`: el límite vive en `AppShell`.

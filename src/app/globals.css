@@ -1,26 +1,184 @@
 @import "tailwindcss";
+@import "lib-kit-components/styles.css";
+@source "../../node_modules/lib-kit-components/dist";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================
+   Crossfit team — paleta ROJA sobre NEGRO
+   Se pisan los tokens que trae lib-kit-components/styles.css.
+   Tema claro: valores por defecto (@theme).
+   Tema oscuro: .dark (next-themes agrega la clase en <html>).
+   ============================================================ */
+@theme {
+  --color-primary: #dc2626; /* red-600 */
+  --color-primary-hover: #b91c1c; /* red-700 */
+  --color-surface: #ffffff;
+  --color-surface-alt: #f5f5f5;
+  --color-foreground: #171717;
+  --color-muted: #737373;
+  --color-border: #e5e5e5;
+  --color-accent: #ef4444; /* red-500 */
+  --color-danger: #b91c1c;
+  --color-success: #16a34a;
+
+  /* Ámbar "fuego" de la racha (las tiles de <StreakCard>). El rojo ya es el
+     color de TODO en la app: una llama roja sobre la card no se lee como
+     racha, se lee como un ícono más. El ámbar-600 da 3.16:1 sobre blanco —
+     alcanza para íconos y para el número, que va en 24px bold. */
+  --color-streak: #d97706; /* amber-600 */
+
+  /* Degradado del header hero (AppHeaderCardSlot). Siempre lleva texto blanco. */
+  --color-hero-from: #dc2626; /* red-600 */
+  --color-hero-to: #7f1d1d; /* red-900 */
+
+  /* Verde de WhatsApp. El #25D366 de la marca da 1.98:1 con texto blanco
+     (WCAG AA pide 4.5), así que en tema claro va una versión oscurecida del
+     mismo hue: 5.10:1 sobre blanco. */
+  --color-whatsapp: #0f7f39;
+  --color-whatsapp-fg: #ffffff;
+
+  /* Color por bloque de la planificación: cada título de sección
+     (Movilidad, Fuerza, Skill, WOD, Finisher) se identifica por su color.
+     El WOD sigue siendo el rojo de la marca (protagonista del día). */
+  --color-block-movilidad: #0891b2; /* cyan-600 */
+  --color-block-fuerza: #d97706; /* amber-600 */
+  --color-block-skill: #7c3aed; /* violet-600 */
+  --color-block-wod: #dc2626; /* red-600 = primary */
+  --color-block-finisher: #059669; /* emerald-600 */
+
+  --font-sans: var(--font-inter), "Inter", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --color-primary: #ef4444; /* red-500 */
+  --color-primary-hover: #f87171; /* red-400 */
+  --color-surface: #0a0a0a; /* casi negro */
+  --color-surface-alt: #171717; /* neutral-900 */
+  --color-foreground: #f5f5f5;
+  --color-muted: #a3a3a3;
+  --color-border: #262626; /* neutral-800 */
+  --color-accent: #f87171;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+
+  /* Sobre negro el ámbar oscuro se apaga: sube a la variante clara del hue. */
+  --color-streak: #fbbf24; /* amber-400 */
+
+  /* En oscuro el hero cae al negro: la paleta es roja SOBRE negro. */
+  --color-hero-from: #991b1b; /* red-800 */
+  --color-hero-to: #1a0606;
+
+  /* Sobre fondo casi negro el verde oscuro se apaga: acá sí va el #25D366 de
+     la marca, pero con texto oscuro encima — 9.98:1, y el botón se despega
+     del fondo con el mismo contraste. */
+  --color-whatsapp: #25d366;
+  --color-whatsapp-fg: #0a0a0a;
+
+  /* Sobre negro los bloques suben a la variante clara del hue para tener contraste. */
+  --color-block-movilidad: #22d3ee; /* cyan-400 */
+  --color-block-fuerza: #fbbf24; /* amber-400 */
+  --color-block-skill: #a78bfa; /* violet-400 */
+  --color-block-wod: #ef4444; /* red-500 = primary dark */
+  --color-block-finisher: #34d399; /* emerald-400 */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================================
+   Animaciones del dock de asistencia (<AttendanceDockButton>)
+   Todas mueven sólo `transform` / `opacity` (o `stroke-dashoffset`,
+   que no dispara layout): el compositor las resuelve sin repintar.
+   Los keyframes van fuera de @theme para que siempre se emitan;
+   el @theme sólo registra los nombres para las clases `animate-*`.
+   ============================================================ */
+@theme {
+  --animate-dock-in: dock-in 520ms cubic-bezier(0.22, 1.4, 0.4, 1) both;
+  --animate-dock-sheen: dock-sheen 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  --animate-dock-halo: dock-halo 2.6s ease-in-out infinite;
+  --animate-dock-swap: dock-swap 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-dock-pop: dock-pop 620ms cubic-bezier(0.22, 1.5, 0.4, 1);
+  --animate-dock-ring: dock-ring 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-dock-check: dock-check 460ms cubic-bezier(0.65, 0, 0.35, 1) 120ms both;
+}
+
+/* Entrada: sube desde abajo del borde con un pequeño rebote. */
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateY(140%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Brillo que barre el pill cada 5s. Sólo el primer 35% del ciclo se mueve:
+   el resto es pausa, para que sea un guiño y no un estrobo. */
+@keyframes dock-sheen {
+  0% {
+    transform: translateX(0) skewX(-20deg);
+  }
+  35%,
+  100% {
+    transform: translateX(420%) skewX(-20deg);
+  }
+}
+
+/* Respiración del halo detrás del pill: lo que lo hace "pedir" el toque. */
+@keyframes dock-halo {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.045);
+  }
+}
+
+/* Cambio de texto entre estados. */
+@keyframes dock-swap {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Golpe de confirmación del pill entero al marcar. */
+@keyframes dock-pop {
+  0% {
+    transform: scale(1);
+  }
+  38% {
+    transform: scale(1.055);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Ondas que salen del ícono al confirmar. */
+@keyframes dock-ring {
+  from {
+    opacity: 0.55;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+/* El check se dibuja solo (largo del trazo ≈ 22 unidades del viewBox). */
+@keyframes dock-check {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
