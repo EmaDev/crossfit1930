@@ -39,7 +39,7 @@
   /* Color por bloque de la planificación: cada título de sección
      (Movilidad, Fuerza, Skill, WOD, Finisher) se identifica por su color.
      El WOD sigue siendo el rojo de la marca (protagonista del día). */
-  --color-block-movilidad: #0891b2; /* cyan-600 */
+  --color-block-calentamiento: #0891b2; /* cyan-600 */
   --color-block-fuerza: #d97706; /* amber-600 */
   --color-block-skill: #7c3aed; /* violet-600 */
   --color-block-wod: #dc2626; /* red-600 = primary */
@@ -75,7 +75,7 @@
   --color-whatsapp-fg: #0a0a0a;
 
   /* Sobre negro los bloques suben a la variante clara del hue para tener contraste. */
-  --color-block-movilidad: #22d3ee; /* cyan-400 */
+  --color-block-calentamiento: #22d3ee; /* cyan-400 */
   --color-block-fuerza: #fbbf24; /* amber-400 */
   --color-block-skill: #a78bfa; /* violet-400 */
   --color-block-wod: #ef4444; /* red-500 = primary dark */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { RoutineDay } from "@/lib/data/wods";
+import type { RoutineDay } from "@/lib/data/routine-types";
 import { ShareDaySheet } from "@/components/organisms/share-day-sheet";
 import { ShareIcon } from "@/components/atoms/icons";
 

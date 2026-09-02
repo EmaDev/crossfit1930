@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { BottomSheet, Button, Spinner, useSnackbar } from "lib-kit-components";
-import type { RoutineDay } from "@/lib/data/wods";
+import type { RoutineDay } from "@/lib/data/routine-types";
 import { dayAsText, renderDayImage } from "@/lib/share/wod-image";
 import { CheckIcon, CopyIcon, WhatsappIcon } from "@/components/atoms/icons";
 

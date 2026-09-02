@@ -1,7 +1,7 @@
 import { Card } from "lib-kit-components";
 import type { Comment } from "lib-kit-components";
 import type { RatingSummary } from "@/lib/data/ratings";
-import type { RoutineDay } from "@/lib/data/wods";
+import type { RoutineDay } from "@/lib/data/routine-types";
 import { ExerciseCard } from "@/components/molecules/exercise-card";
 import { ShareDayButton } from "@/components/molecules/share-day-button";
 import { WodComments } from "@/components/organisms/wod-comments";
@@ -46,10 +46,10 @@ export function DayView({
       <Card variant="elevated" padding="none" className="overflow-hidden">
         <header className="flex items-start justify-between gap-3 border-b border-border bg-surface-alt px-4 py-4">
           <div className="min-w-0">
-            <h2 className="text-3xl font-black uppercase leading-none tracking-tight text-foreground">
+            <h2 className="text-xl font-black uppercase leading-none tracking-tight text-foreground">
               {cap(day.weekday)}
             </h2>
-            <p className="mt-2 text-sm font-medium text-muted">{day.title}</p>
+            <p className="mt-1 text-sm font-medium text-muted">{day.title}</p>
           </div>
           <ShareDayButton day={day} routineName={routineName} />
         </header>

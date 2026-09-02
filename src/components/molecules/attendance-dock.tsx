@@ -85,6 +85,8 @@ export function AttendanceDock({
 
           <button
             type="button"
+            // Ancla del paso "Marcá el día cumplido" del tour (ver <AppTour>).
+            data-tour="marcar-dia"
             onClick={() => {
               haptic(12);
               onPress();

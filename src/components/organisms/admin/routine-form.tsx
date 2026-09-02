@@ -15,9 +15,13 @@ import {
 } from "lib-kit-components";
 import { saveRoutine, type RoutineInput } from "@/lib/actions/routines";
 import {
+  EXERCISE_SECTIONS,
   ORDERED_WEEKDAYS,
+  SECTION_LABEL,
   dayKind,
+  sectionOf,
   type Exercise,
+  type ExerciseSection,
   type Routine,
   type RoutineDay,
   type Weekday,
@@ -36,6 +40,25 @@ const WEEKDAY_LABEL: Record<Weekday, string> = {
 };
 
 const EMPTY_EXERCISE: Exercise = { name: "", detail: "" };
+
+/**
+ * Opciones del selector de sección. Un ejercicio sin `section` (rutina vieja o
+ * recién agregado) muestra la sección deducida del nombre, así el coach ve el
+ * bloque que el atleta va a ver y sólo lo toca si quiere otro.
+ */
+const SECTION_OPTIONS = EXERCISE_SECTIONS.map((value) => ({
+  value,
+  label: SECTION_LABEL[value],
+}));
+
+/**
+ * `finisher` no está entre las opciones que se ofrecen, pero rutinas viejas lo
+ * traen: si el ejercicio ya es uno, se agrega para no perderlo al editar.
+ */
+const sectionOptionsFor = (current: ExerciseSection) =>
+  EXERCISE_SECTIONS.includes(current)
+    ? SECTION_OPTIONS
+    : [...SECTION_OPTIONS, { value: current, label: SECTION_LABEL[current] }];
 
 /**
  * Cada día tiene uno de tres modos:
@@ -312,6 +335,14 @@ export function RoutineForm({
                         <TrashIcon />
                       </Button>
                     </div>
+                    <Select
+                      label="Sección"
+                      value={sectionOf(exercise)}
+                      onChange={(v) =>
+                        setExercise(weekday, i, { section: v as ExerciseSection })
+                      }
+                      options={sectionOptionsFor(sectionOf(exercise))}
+                    />
                     <Textarea
                       label="Detalle"
                       value={exercise.detail}

@@ -3,7 +3,13 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/session";
-import { isMondayIso, type Exercise, type RoutineDay, type Weekday } from "@/lib/data/wods";
+import {
+  isMondayIso,
+  sectionOf,
+  type Exercise,
+  type RoutineDay,
+  type Weekday,
+} from "@/lib/data/wods";
 import { adminDb, isAdminConfigured } from "@/lib/firebase/admin";
 import { COLLECTIONS } from "@/lib/firebase/collections";
 import { emitBroadcastNotification } from "@/lib/notifications/emit";
@@ -27,9 +33,14 @@ export type SaveRoutineResult =
   | { ok: true; created: boolean }
   | { ok: false; reason: "forbidden" | "not-configured" | "invalid" | "error" };
 
+/**
+ * `section` se guarda SIEMPRE, aunque el coach no la haya tocado: se resuelve
+ * con `sectionOf` (elección explícita o deducción por nombre) para que el doc
+ * quede autodescriptivo y la card no dependa de adivinar el bloque.
+ */
 function sanitizeExercises(exercises: Exercise[]): Exercise[] {
   return exercises
-    .map((e) => ({ name: e.name.trim(), detail: e.detail.trim() }))
+    .map((e) => ({ name: e.name.trim(), detail: e.detail.trim(), section: sectionOf(e) }))
     .filter((e) => e.name || e.detail);
 }
 

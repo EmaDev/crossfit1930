@@ -76,7 +76,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        {/* El tema por defecto es CLARO: la primera visita siempre arranca en claro,
+            sin mirar el `prefers-color-scheme` del sistema. "Sistema" sigue disponible
+            en ajustes como una opción más, y la elección queda guardada en localStorage. */}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>
       </body>

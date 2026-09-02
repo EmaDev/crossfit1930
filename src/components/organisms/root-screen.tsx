@@ -10,8 +10,9 @@ import {
   type TabItem,
 } from "lib-kit-components";
 import { useNotifications } from "@/app/(app)/notifications-context";
-import { BellIcon, MoonIcon, SunIcon, UserIcon } from "@/components/atoms/icons";
+import { BellIcon, HelpCircleIcon, MoonIcon, SunIcon, UserIcon } from "@/components/atoms/icons";
 import { Logo } from "@/components/atoms/logo";
+import { AppTour } from "@/components/organisms/app-tour";
 
 /**
  * La marca, centrada en el cuerpo del hero, con el título de la pantalla
@@ -69,7 +70,8 @@ export function RootScreen({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState(tabs[0]?.id ?? "");
-  const actions = useHeaderActions();
+  const [tourOpen, setTourOpen] = useState(false);
+  const actions = useHeaderActions(() => setTourOpen(true));
 
   return (
     <>
@@ -114,15 +116,18 @@ export function RootScreen({
         gradientClassName="bg-[linear-gradient(135deg,var(--color-hero-from),var(--color-hero-to))]"
       />
 
-      <div className="px-4 pt-2">
+      {/* `id`: ancla del paso "Hoy y la semana" del tour (ver <AppTour>). */}
+      <div id="tour-tabs" className="px-4 pt-2">
         <TabsGlow items={tabs} value={tab} onChange={setTab} size="sm" panels={panels} />
       </div>
+
+      <AppTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </>
   );
 }
 
-/** Campana con badge + alternar tema, como acciones de la barra del header. */
-function useHeaderActions(): HeaderAction[] {
+/** Campana con badge, alternar tema y ayuda, como acciones de la barra del header. */
+function useHeaderActions(onHelp: () => void): HeaderAction[] {
   const { unread, open } = useNotifications();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -144,6 +149,12 @@ function useHeaderActions(): HeaderAction[] {
       label: isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro",
       icon: isDark ? <SunIcon /> : <MoonIcon />,
       onClick: () => setTheme(isDark ? "light" : "dark"),
+    },
+    {
+      id: "ayuda",
+      label: "Cómo funciona la app",
+      icon: <HelpCircleIcon />,
+      onClick: onHelp,
     },
   ];
 }

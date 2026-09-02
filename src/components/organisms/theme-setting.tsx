@@ -15,7 +15,9 @@ export function ThemeSetting() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  const current = mounted ? theme ?? "system" : "system";
+  // El default de la app es claro (ver `ThemeProvider` en `app/layout.tsx`):
+  // hasta que montamos —y si el usuario nunca eligió— mostramos "Claro".
+  const current = mounted ? theme ?? "light" : "light";
 
   return (
     <div className="px-4 py-5">

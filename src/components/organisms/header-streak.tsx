@@ -32,6 +32,8 @@ export function HeaderStreak({
     <>
       <button
         type="button"
+        // `id`: ancla del paso "Tu racha" del tour (ver <AppTour>).
+        id="tour-streak"
         onClick={() => {
           setMounted(true);
           setOpen(true);

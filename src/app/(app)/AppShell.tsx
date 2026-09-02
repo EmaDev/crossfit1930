@@ -108,7 +108,9 @@ export function AppShell({
               <main className="min-w-0 flex-1 md:pb-8">{children}</main>
             </SafeArea>
 
-            <BottomNav items={NAV} />
+            {/* `tour-bottom-nav`: ancla del tour (ver <AppTour>); BottomNav no
+                expone `id`, sólo `className`. */}
+            <BottomNav items={NAV} className="tour-bottom-nav" />
 
             <NotificationSidebar
               open={notifOpen}

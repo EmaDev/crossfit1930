@@ -7,6 +7,7 @@ import {
   WEEKDAY_INDEX,
   mondayOfWeek,
   unknownWeekRoutine,
+  isExerciseSection,
   type DayKind,
   type Exercise,
   type Routine,
@@ -29,8 +30,22 @@ import {
  * ruta directo para no arrastrar este módulo (y `firebase-admin`) al bundle
  * del browser.
  */
-export type { DayKind, Exercise, Routine, RoutineDay, Weekday } from "@/lib/data/routine-types";
-export { ORDERED_WEEKDAYS, dayKind, weekdayIndex } from "@/lib/data/routine-types";
+export type {
+  DayKind,
+  Exercise,
+  ExerciseSection,
+  Routine,
+  RoutineDay,
+  Weekday,
+} from "@/lib/data/routine-types";
+export {
+  EXERCISE_SECTIONS,
+  ORDERED_WEEKDAYS,
+  SECTION_LABEL,
+  dayKind,
+  sectionOf,
+  weekdayIndex,
+} from "@/lib/data/routine-types";
 
 /**
  * El box está en un solo lugar: "hoy" es hoy ACÁ, no donde corra el servidor.
@@ -88,10 +103,11 @@ export function isMondayIso(iso: string): boolean {
 const VALID_KINDS: DayKind[] = ["training", "descanso", "desconocida"];
 
 function toDay(raw: DocumentData): RoutineDay {
-  const exercises = Array.isArray(raw?.exercises)
+  const exercises: Exercise[] = Array.isArray(raw?.exercises)
     ? raw.exercises.map((e: DocumentData) => ({
         name: typeof e?.name === "string" ? e.name : "",
         detail: typeof e?.detail === "string" ? e.detail : "",
+        ...(isExerciseSection(e?.section) ? { section: e.section } : {}),
       }))
     : [];
   const kind: DayKind | undefined = VALID_KINDS.includes(raw?.kind) ? raw.kind : undefined;

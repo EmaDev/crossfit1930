@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { Button, Textarea, useToast } from "lib-kit-components";
 import {
+  EXERCISE_SECTIONS,
   ORDERED_WEEKDAYS,
+  isExerciseSection,
   type Exercise,
+  type ExerciseSection,
   type Routine,
   type RoutineDay,
   type Weekday,
@@ -27,6 +30,7 @@ import { CopyIcon } from "@/components/atoms/icons";
  */
 
 const WEEKDAYS_HELP = ORDERED_WEEKDAYS.join(" | ");
+const SECTIONS_HELP = EXERCISE_SECTIONS.join(" | ");
 
 const WEEK_SCHEMA = `{
   "name": "string",
@@ -38,7 +42,11 @@ const WEEK_SCHEMA = `{
       "kind": "training | descanso   (opcional, default training)",
       "title": "string",
       "exercises": [
-        { "name": "string", "detail": "string" }
+        {
+          "name": "string",
+          "detail": "string",
+          "section": "${SECTIONS_HELP}   (opcional, se deduce del nombre)"
+        }
       ]
     }
   ]
@@ -49,7 +57,11 @@ const DAY_SCHEMA = `{
   "kind": "training | descanso   (opcional, default training)",
   "title": "string",
   "exercises": [
-    { "name": "string", "detail": "string" }
+    {
+      "name": "string",
+      "detail": "string",
+      "section": "${SECTIONS_HELP}   (opcional, se deduce del nombre)"
+    }
   ]
 }`;
 
@@ -94,7 +106,14 @@ function coerceExercises(v: unknown, warn: (m: string) => void): Exercise[] {
     const name = asString(e.name ?? e.nombre);
     const detail = asString(e.detail ?? e.detalle ?? e.description ?? e.descripción);
     if (!name && !detail) return;
-    out.push({ name, detail });
+    const rawSection = asString(e.section ?? e.seccion ?? e.sección ?? e.bloque).toLowerCase();
+    const section: ExerciseSection | undefined = isExerciseSection(rawSection)
+      ? rawSection
+      : undefined;
+    if (rawSection && !section) {
+      warn(`ejercicio #${i + 1}: sección '${rawSection}' desconocida, se dedujo del nombre`);
+    }
+    out.push({ name, detail, ...(section ? { section } : {}) });
   });
   return out;
 }

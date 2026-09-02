@@ -1,5 +1,5 @@
 import { Card } from "lib-kit-components";
-import type { Exercise } from "@/lib/data/wods";
+import { SECTION_LABEL, sectionOf, type Exercise, type ExerciseSection } from "@/lib/data/routine-types";
 
 /**
  * Un ejercicio de la rutina. El coach escribe el formato entre paréntesis
@@ -10,44 +10,25 @@ import type { Exercise } from "@/lib/data/wods";
  * ("15 T2B / 30 K2E", "Scaled: … | ADV: …") y no hay forma confiable de
  * separarlo automáticamente sin romper los casos donde la barra es una lista.
  *
- * El TÍTULO grande de la card es el bloque (Movilidad, Fuerza, WOD…), cada
- * uno con su color propio; el nombre concreto del ejercicio queda debajo.
+ * El TÍTULO grande de la card es la sección (Calentamiento, Skill, Fuerza,
+ * WOD…), que ahora elige el coach en el panel —`sectionOf` cae en la deducción
+ * por nombre sólo en rutinas viejas—; el nombre concreto queda debajo.
  */
-
-type Block = "movilidad" | "fuerza" | "skill" | "wod" | "finisher";
-
-/** El bloque se deduce del nombre; es lo único que estructura la lista plana. */
-function blockOf(name: string): Block {
-  const n = name.toLowerCase();
-  if (n.includes("movilidad") || n.includes("calor")) return "movilidad";
-  if (n.includes("finisher")) return "finisher";
-  if (n.includes("metcon") || n.includes("wod")) return "wod";
-  if (n.includes("skill")) return "skill";
-  return "fuerza";
-}
-
-const BLOCK_LABEL: Record<Block, string> = {
-  movilidad: "Movilidad",
-  fuerza: "Fuerza",
-  skill: "Skill",
-  wod: "WOD",
-  finisher: "Finisher",
-};
 
 /**
- * Cada bloque con su color (tokens en `globals.css`). Clases literales —nada
- * de `text-block-${block}`— para que el scanner de Tailwind las detecte.
+ * Cada sección con su color (tokens en `globals.css`). Clases literales —nada
+ * de `text-block-${section}`— para que el scanner de Tailwind las detecte.
  */
-const BLOCK_TEXT: Record<Block, string> = {
-  movilidad: "text-block-movilidad",
+const BLOCK_TEXT: Record<ExerciseSection, string> = {
+  calentamiento: "text-block-calentamiento",
   fuerza: "text-block-fuerza",
   skill: "text-block-skill",
   wod: "text-block-wod",
   finisher: "text-block-finisher",
 };
 
-const BLOCK_BORDER: Record<Block, string> = {
-  movilidad: "border-block-movilidad",
+const BLOCK_BORDER: Record<ExerciseSection, string> = {
+  calentamiento: "border-block-calentamiento",
   fuerza: "border-block-fuerza",
   skill: "border-block-skill",
   wod: "border-block-wod",
@@ -68,7 +49,7 @@ export function ExerciseCard({
   exercise: Exercise;
   plain?: boolean;
 }) {
-  const block = blockOf(exercise.name);
+  const block = sectionOf(exercise);
   const { title, format } = splitFormat(exercise.name);
   const isWod = block === "wod";
 
@@ -76,9 +57,9 @@ export function ExerciseCard({
     <>
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
         <h3
-          className={`text-xl font-extrabold uppercase leading-none tracking-tight ${BLOCK_TEXT[block]}`}
+          className={`text-md font-extrabold uppercase leading-none tracking-tight ${BLOCK_TEXT[block]}`}
         >
-          {BLOCK_LABEL[block]}
+          {SECTION_LABEL[block]}
         </h3>
         {format && (
           <span
@@ -89,11 +70,11 @@ export function ExerciseCard({
         )}
       </div>
 
-      {title && title.trim() !== BLOCK_LABEL[block] && (
-        <p className="mt-1.5 text-sm font-semibold leading-snug text-foreground">{title}</p>
+      {title && title.trim() !== SECTION_LABEL[block] && (
+        <p className="mt-1 text-sm font-semibold leading-snug text-foreground">{title}</p>
       )}
 
-      <p className="mt-1.5 text-sm leading-relaxed text-muted">{exercise.detail}</p>
+      <p className="mt-1 text-sm leading-relaxed text-muted">{exercise.detail}</p>
     </>
   );
 

@@ -1,4 +1,9 @@
-import type { RoutineDay } from "@/lib/data/wods";
+import {
+  SECTION_LABEL,
+  sectionOf,
+  type ExerciseSection,
+  type RoutineDay,
+} from "@/lib/data/routine-types";
 
 /**
  * Dibuja la planificación de un día en un canvas y devuelve el PNG.
@@ -26,26 +31,6 @@ const BORDER = "#262626";
 
 const FONT = (size: number, weight = "400") =>
   `${weight} ${size}px Inter, system-ui, -apple-system, sans-serif`;
-
-type Block = "movilidad" | "fuerza" | "skill" | "wod" | "finisher";
-
-/** Mismo criterio que `ExerciseCard`: el bloque se deduce del nombre. */
-function blockOf(name: string): Block {
-  const n = name.toLowerCase();
-  if (n.includes("movilidad")) return "movilidad";
-  if (n.includes("finisher")) return "finisher";
-  if (n.includes("metcon") || n.includes("wod")) return "wod";
-  if (n.includes("skill")) return "skill";
-  return "fuerza";
-}
-
-const BLOCK_LABEL: Record<Block, string> = {
-  movilidad: "MOVILIDAD",
-  fuerza: "FUERZA",
-  skill: "SKILL",
-  wod: "WOD",
-  finisher: "FINISHER",
-};
 
 /** Separa "Metcon / WOD (For Time)" en título y formato. */
 function splitFormat(name: string): { title: string; format?: string } {
@@ -84,7 +69,7 @@ function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
 
 /** Layout de un ejercicio ya medido, listo para dibujar. */
 type Measured = {
-  block: Block;
+  block: ExerciseSection;
   title: string;
   format?: string;
   titleLines: string[];
@@ -111,7 +96,7 @@ function measure(ctx: CanvasRenderingContext2D, day: RoutineDay): Measured[] {
     const detailLines = wrap(ctx, ex.detail, CONTENT_W);
 
     return {
-      block: blockOf(ex.name),
+      block: sectionOf(ex),
       title,
       format,
       titleLines,
@@ -198,7 +183,7 @@ export async function renderDayImage(
 
     ctx.fillStyle = isWod ? RED : MUTED;
     ctx.font = FONT(26, "700");
-    ctx.fillText(BLOCK_LABEL[it.block], PAD, y);
+    ctx.fillText(SECTION_LABEL[it.block].toUpperCase(), PAD, y);
 
     if (it.format) {
       ctx.font = FONT(28, "700");
