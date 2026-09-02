@@ -12,7 +12,8 @@
     "gen-logo-svg": "node scripts/gen-logo-svg.mjs",
     "admin:grant": "node --env-file=.env.local scripts/admin-grant.mjs",
     "admin:revoke": "node --env-file=.env.local scripts/admin-revoke.mjs",
-    "seed:routines": "node --env-file=.env.local scripts/seed-routines.mjs"
+    "seed:routines": "node --env-file=.env.local scripts/seed-routines.mjs",
+    "list:routines": "node --env-file=.env.local scripts/list-routines.mjs"
   },
   "dependencies": {
     "firebase": "^12.18.0",

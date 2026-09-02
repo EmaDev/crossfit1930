@@ -17,10 +17,10 @@ import { Logo } from "@/components/atoms/logo";
  * La marca, centrada en el cuerpo del hero, con el título de la pantalla
  * debajo si lo hay. Inicio va sin texto: ahí el hero es sólo el logo.
  *
- * Va en monocromo y hereda el blanco del header: el logo original tiene el
- * texto en rojo y los discos en negro, y sobre el degradado rojo del hero se
- * perdería. Antes eso se resolvía con una placa blanca detrás; con el trazo
- * vectorial ya no hace falta.
+ * El texto va en monocromo y hereda el blanco del header (el rojo de la marca
+ * se perdería sobre el degradado rojo del hero); la barra —la mancuerna— va en
+ * negro fijo vía `barClassName`, como en el logo original. Antes esto se
+ * resolvía con una placa blanca detrás; con el trazo vectorial ya no hace falta.
  *
  * Ocupa el slot `heroLogo` del kit, que REEMPLAZA a `heroTitle`: por eso el
  * título lo dibuja este nodo y no la prop del componente.
@@ -31,7 +31,7 @@ function HeroBrand({ text }: { text?: string }) {
     // vía: `heroClassName` concatena, y Tailwind emite `.pb-5` después de los
     // valores menores, así que un `pb-0` de ahí nunca gana.
     <span className="-mb-5 flex flex-col items-center gap-2">
-      <Logo tone="mono" className="h-20 w-auto" />
+      <Logo tone="mono" className="h-20 w-auto" barClassName="text-black" />
       {/* El kit envuelve el `heroLogo` en un <span>, que no puede contener un
           <h1>: el encabezado se declara por ARIA para no romper el markup. */}
       {text && (
@@ -73,6 +73,21 @@ export function RootScreen({
 
   return (
     <>
+      {/* iOS PWA: el header hero está en `black-translucent`, así que el
+          contenido sangra por debajo de la status bar (reloj / isla dinámica).
+          Sin esto, esa franja queda sobre el fondo blanco del body y el header
+          parece "pegado" a la barra del sistema y más alto de lo que es. Este
+          relleno fijo pinta la franja con el mismo rojo que el tope del
+          degradado del hero, para que status bar + header se lean como una sola
+          pieza. El alto es la misma inset (`--sa-top`) que <AppHeaderCardSlot>
+          usa para su `padding-top`, así no hay doble salto; en desktop/Android
+          la inset es 0 y el relleno no ocupa nada. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 top-0 z-30 bg-[var(--color-hero-from)]"
+        style={{ height: "var(--sa-top, env(safe-area-inset-top, 0px))" }}
+      />
+
       <AppHeaderCardSlot
         heroLogo={<HeroBrand text={heroTitle} />}
         heroAlign="center"

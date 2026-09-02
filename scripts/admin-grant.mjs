@@ -7,6 +7,7 @@
 // (ya incluido en el script de package.json).
 import { cert, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 
 const email = process.argv[2];
 if (!email) {
@@ -33,6 +34,12 @@ try {
   const auth = getAuth();
   const user = await auth.getUserByEmail(email);
   await auth.setCustomUserClaims(user.uid, { admin: true });
+  // Espejo en Firestore: `lib/data/*` lo usa para sacar a los admin del ranking,
+  // los comentarios, etc. Así el filtro aplica sin esperar al próximo login.
+  await getFirestore()
+    .collection("crossfit-users")
+    .doc(user.uid)
+    .set({ admin: true }, { merge: true });
   console.log(`OK — ${email} (uid ${user.uid}) ahora es admin.`);
   console.log("Tiene que cerrar sesión y volver a entrar para que el claim tome efecto.");
 } catch (err) {

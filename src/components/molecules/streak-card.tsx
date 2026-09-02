@@ -102,10 +102,10 @@ function GuestStreakCard() {
         <p className="text-xs text-muted">Registrate y sumá días al ranking del box.</p>
       </div>
       <Link
-        href="/registro"
+        href="/login"
         className="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-primary-hover"
       >
-        Crear cuenta
+        Iniciar sesión
       </Link>
     </div>
   );

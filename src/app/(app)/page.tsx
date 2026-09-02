@@ -5,8 +5,10 @@ import { getComments } from "@/lib/data/comments";
 import { getRatingSummary } from "@/lib/data/ratings";
 import { getUserStats } from "@/lib/data/user-stats";
 import {
+  ORDERED_WEEKDAYS,
   boxTodayIso,
   dayForToday,
+  dayKind,
   getCurrentRoutine,
   todayIndex,
   weekdayIndex,
@@ -48,15 +50,31 @@ export default async function HomePage() {
 
   const todayIdx = todayIndex();
   const today = dayForToday(routine, todayIdx);
+  const todayKind = today ? dayKind(today) : "desconocida";
+  const trainsToday = todayKind === "training";
 
-  // Si hoy es descanso, ofrecemos el próximo día de la semana que sí entrena.
-  const nextDay = routine.days.find((d) => weekdayIndex(d.weekday) > todayIdx);
+  // Si hoy no se entrena, ofrecemos el próximo día de la semana que sí entrena.
+  const nextDay = routine.days.find(
+    (d) => weekdayIndex(d.weekday) > todayIdx && dayKind(d) === "training",
+  );
 
   // El selector de la semana abre en hoy; si hoy no entrena, en el próximo.
-  const initialDay = (today ?? nextDay ?? routine.days[0]).weekday;
+  const initialDay =
+    (today ?? nextDay ?? routine.days[0])?.weekday ?? ORDERED_WEEKDAYS[todayIdx === 0 ? 6 : todayIdx - 1];
 
   // El botón de "marcar cumplido" sólo tiene sentido si hoy se entrena.
   const doneToday = attendedDates.includes(todayIso);
+
+  const restNote = (kind: "descanso" | "desconocida") =>
+    nextDay ? (
+      <>
+        Próximo entrenamiento: <span className="font-medium text-foreground">{cap(nextDay.weekday)}</span> — {nextDay.title}.
+      </>
+    ) : kind === "descanso" ? (
+      "No hay más entrenamientos esta semana."
+    ) : (
+      "Todavía no se cargó la planificación de esta semana."
+    );
 
   const currentUser = session
     ? { name: session.name ?? "Vos", avatar: session.picture ?? undefined }
@@ -70,7 +88,7 @@ export default async function HomePage() {
         panels={{
           hoy: (
             <div className="flex flex-col gap-4 pt-1">
-              {today ? (
+              {today && trainsToday ? (
                 <DayView
                   day={today}
                   routineName={routine.name}
@@ -78,11 +96,8 @@ export default async function HomePage() {
                 />
               ) : (
                 <RestDayCard
-                  nextDay={
-                    nextDay
-                      ? { label: cap(nextDay.weekday), title: nextDay.title }
-                      : undefined
-                  }
+                  kind={todayKind === "descanso" ? "descanso" : "desconocida"}
+                  note={restNote(todayKind === "descanso" ? "descanso" : "desconocida")}
                 />
               )}
               <HistorialLink label="Ver historial de WODs" />
@@ -101,11 +116,14 @@ export default async function HomePage() {
                 panels={Object.fromEntries(
                   routine.days.map((d) => [
                     d.weekday,
-                    <DayView
-                      key={d.weekday}
-                      day={d}
-                      routineName={routine.name}
-                    />,
+                    dayKind(d) === "training" ? (
+                      <DayView key={d.weekday} day={d} routineName={routine.name} />
+                    ) : (
+                      <RestDayCard
+                        key={d.weekday}
+                        kind={dayKind(d) === "descanso" ? "descanso" : "desconocida"}
+                      />
+                    ),
                   ]),
                 )}
               />
@@ -115,7 +133,7 @@ export default async function HomePage() {
       />
       {/* Marcar asistencia es sólo para quien tiene cuenta: un invitado no
           tiene racha que sumar, así que no ve el dock. */}
-      {today && session && (
+      {today && trainsToday && session && (
         <MarkDayDock sessionTitle={today.title} alreadyDone={doneToday} />
       )}
     </>

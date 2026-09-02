@@ -4,7 +4,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth/session";
 import { streakContinues } from "@/lib/data/streak";
-import { boxTodayIso, getCurrentRoutine, weekdayIndex } from "@/lib/data/wods";
+import { boxTodayIso, dayKind, getCurrentRoutine, weekdayIndex } from "@/lib/data/wods";
 import { adminDb, isAdminConfigured } from "@/lib/firebase/admin";
 import { COLLECTIONS, attendanceId } from "@/lib/firebase/collections";
 
@@ -60,12 +60,14 @@ export async function markAttendance(): Promise<MarkAttendanceResult> {
   const userRef = db.collection(COLLECTIONS.users).doc(uid);
 
   try {
-    // La rutina define qué weekdays "cuentan": un hueco en un día sin WOD no
-    // corta la racha. La rutina se repite semana a semana, así que su set de
-    // días alcanza para la regla de continuidad.
+    // La rutina define qué weekdays "cuentan": un hueco en un día sin WOD
+    // (descanso o desconocida) no corta la racha. La rutina se repite semana a
+    // semana, así que su set de días alcanza para la regla de continuidad.
     const routine = await getCurrentRoutine();
     const trainingWeekdays = new Set(
-      routine.days.map((d) => weekdayIndex(d.weekday)),
+      routine.days
+        .filter((d) => dayKind(d) === "training")
+        .map((d) => weekdayIndex(d.weekday)),
     );
 
     const alreadyMarked = await db.runTransaction(async (tx) => {

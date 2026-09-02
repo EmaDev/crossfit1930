@@ -13,15 +13,22 @@ import { LOGO_BAR_PATH, LOGO_TEXT_PATH, LOGO_VIEW_BOX } from "./logo-paths";
  * - `mono`: todo `currentColor`. Es el que va sobre el degradado del hero,
  *   donde el rojo de la marca se perdería contra el fondo.
  *
+ * `barClassName` deja pisar el color SÓLO de la barra (la mancuerna) sin tocar
+ * el texto: en el hero el texto hereda el blanco del header pero la barra va en
+ * negro fijo (`text-black`), como en el logo original de la marca.
+ *
  * Sin estado ni hooks: es Server Component.
  */
 export function Logo({
   tone = "brand",
   className = "",
+  barClassName = "",
   label = "Crossfit team",
 }: {
   tone?: "brand" | "mono";
   className?: string;
+  /** Clases para la barra (la mancuerna). Su `fill` es `currentColor`, así que un `text-*` la recolorea. */
+  barClassName?: string;
   /** Nombre accesible. Pasá `""` si el logo es decorativo y el texto ya está al lado. */
   label?: string;
 }) {
@@ -33,7 +40,7 @@ export function Logo({
       className={className}
       {...(label ? { role: "img", "aria-label": label } : { "aria-hidden": true })}
     >
-      <path d={LOGO_BAR_PATH} fill="currentColor" />
+      <path d={LOGO_BAR_PATH} fill="currentColor" className={barClassName} />
       <path
         d={LOGO_TEXT_PATH}
         fill={tone === "mono" ? "currentColor" : "var(--color-primary)"}

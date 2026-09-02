@@ -35,12 +35,16 @@ function sanitizeExercises(exercises: Exercise[]): Exercise[] {
 
 function sanitizeDays(days: RoutineDay[]): RoutineDay[] {
   return days
-    .map((d) => ({
-      weekday: d.weekday,
-      title: d.title.trim(),
-      exercises: sanitizeExercises(d.exercises),
-    }))
-    .filter((d) => d.title && d.exercises.length > 0);
+    .map((d) => {
+      const kind = d.kind === "descanso" ? ("descanso" as const) : ("training" as const);
+      return {
+        weekday: d.weekday,
+        kind,
+        title: d.title.trim(),
+        exercises: kind === "descanso" ? [] : sanitizeExercises(d.exercises),
+      };
+    })
+    .filter((d) => d.kind === "descanso" || (d.title && d.exercises.length > 0));
 }
 
 export async function saveRoutine(

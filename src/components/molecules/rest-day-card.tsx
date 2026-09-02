@@ -1,28 +1,34 @@
+import type { ReactNode } from "react";
 import { Card } from "lib-kit-components";
-import { CalendarIcon } from "@/components/atoms/icons";
+import { HelpCircleIcon, MoonIcon } from "@/components/atoms/icons";
 
 /**
- * Hoy no hay WOD. No es un error ni un vacío: la rutina de ejemplo entrena
- * de martes a viernes, así que lunes, sábado y domingo son días de descanso.
- * Por eso muestra el próximo día en vez de una pantalla de "sin resultados".
+ * Un día sin WOD. Dos motivos, cada uno con su ícono:
+ * - `descanso`: descanso deliberado (luna).
+ * - `desconocida`: todavía no se pasó la rutina de ese día (signo de pregunta).
+ *
+ * `note` es el texto de contexto de abajo (ej. cuál es el próximo día que
+ * entrena); lo arma quien la usa porque depende de la pantalla.
  */
-export function RestDayCard({ nextDay }: { nextDay?: { label: string; title: string } }) {
+export function RestDayCard({
+  kind = "descanso",
+  note,
+}: {
+  kind?: "descanso" | "desconocida";
+  note?: ReactNode;
+}) {
+  const isRest = kind === "descanso";
+
   return (
     <Card variant="outline" padding="lg">
       <div className="flex flex-col items-center gap-2 text-center">
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-surface-alt text-muted">
-          <CalendarIcon />
+          {isRest ? <MoonIcon /> : <HelpCircleIcon />}
         </span>
-        <p className="font-semibold text-foreground">Hoy toca descanso</p>
-        {nextDay ? (
-          <p className="text-sm text-muted">
-            El próximo entrenamiento es el{" "}
-            <span className="font-medium text-foreground">{nextDay.label}</span>:{" "}
-            {nextDay.title}.
-          </p>
-        ) : (
-          <p className="text-sm text-muted">No hay más entrenamientos esta semana.</p>
-        )}
+        <p className="font-semibold text-foreground">
+          {isRest ? "Día de descanso" : "Rutina no cargada"}
+        </p>
+        {note && <p className="text-sm text-muted">{note}</p>}
       </div>
     </Card>
   );

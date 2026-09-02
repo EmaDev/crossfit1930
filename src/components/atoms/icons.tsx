@@ -201,3 +201,11 @@ export const TrashIcon = (p: IconProps) => (
     <path d="M10 11v6M14 11v6" />
   </Svg>
 );
+
+export const HelpCircleIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M9.5 9.5a2.5 2.5 0 0 1 4.9.7c0 1.7-2.4 2-2.4 3.8" />
+    <path d="M12 17.5h.01" />
+  </Svg>
+);

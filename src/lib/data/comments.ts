@@ -3,6 +3,7 @@ import "server-only";
 import type { Comment } from "lib-kit-components";
 import { adminDb, isAdminConfigured } from "@/lib/firebase/admin";
 import { COLLECTIONS } from "@/lib/firebase/collections";
+import { getAdminUids } from "@/lib/data/admins";
 
 /**
  * Comentarios de la comunidad para el WOD de una fecha, en el formato plano que
@@ -22,12 +23,16 @@ export async function getComments(
   if (!isAdminConfigured()) return [];
 
   try {
-    const snap = await adminDb()
-      .collection(COLLECTIONS.comments)
-      .where("wodDate", "==", wodDate)
-      .get();
+    const [snap, adminUids] = await Promise.all([
+      adminDb()
+        .collection(COLLECTIONS.comments)
+        .where("wodDate", "==", wodDate)
+        .get(),
+      getAdminUids(),
+    ]);
 
     return snap.docs
+      .filter((doc) => !adminUids.has(doc.data().uid)) // los admin no se ven en el cliente
       .map((doc) => {
         const d = doc.data();
         const likedBy: string[] = Array.isArray(d.likedBy) ? d.likedBy : [];

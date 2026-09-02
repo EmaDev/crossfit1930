@@ -56,14 +56,17 @@ export async function addComment(
         createdAt: Timestamp.now(),
       });
 
-    await emitBroadcastNotification({
-      type: "comment",
-      title: `${firstName(session)} comentó el WOD`,
-      description: preview(body),
-      link: "/",
-      tone: "neutral",
-      actorUid: session.uid,
-    });
+    // Un admin no se ve en el cliente (ni sus comentarios): tampoco emite aviso.
+    if (!session.admin) {
+      await emitBroadcastNotification({
+        type: "comment",
+        title: `${firstName(session)} comentó el WOD`,
+        description: preview(body),
+        link: "/",
+        tone: "neutral",
+        actorUid: session.uid,
+      });
+    }
 
     revalidatePath("/", "layout");
     return { ok: true };
@@ -114,7 +117,7 @@ export async function toggleCommentLike(
         : null;
     });
 
-    if (notifyText != null) {
+    if (notifyText != null && !session.admin) {
       await emitBroadcastNotification({
         type: "like",
         title: `A ${firstName(session)} le gustó un comentario`,

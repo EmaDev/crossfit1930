@@ -1,7 +1,13 @@
 import "server-only";
 
 import { getRoutine } from "@/lib/data/wods";
-import { addDaysIso, mondayOfWeek, weekdayIndex, type RoutineDay } from "@/lib/data/routine-types";
+import {
+  addDaysIso,
+  dayKind,
+  mondayOfWeek,
+  weekdayIndex,
+  type RoutineDay,
+} from "@/lib/data/routine-types";
 import { isAdminConfigured } from "@/lib/firebase/admin";
 
 /**
@@ -37,6 +43,7 @@ export async function getRoutineDaysInRange(
   for (const [monday, routine] of routines) {
     if (!routine) continue;
     for (const day of routine.days) {
+      if (dayKind(day) !== "training") continue; // descanso/desconocida no son WODs
       const idx = weekdayIndex(day.weekday);
       const dateIso = addDaysIso(monday, idx === 0 ? 6 : idx - 1);
       if (dateIso >= monthStart && dateIso <= monthEnd) {

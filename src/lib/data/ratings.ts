@@ -2,6 +2,7 @@ import "server-only";
 
 import { adminDb, isAdminConfigured } from "@/lib/firebase/admin";
 import { COLLECTIONS, ratingId } from "@/lib/firebase/collections";
+import { getAdminUids } from "@/lib/data/admins";
 
 /**
  * Resumen de calificaciones de un WOD (identificado por su fecha
@@ -35,10 +36,13 @@ export async function getRatingSummary(
   if (!isAdminConfigured()) return EMPTY;
 
   try {
-    const snap = await adminDb()
-      .collection(COLLECTIONS.ratings)
-      .where("wodDate", "==", wodDate)
-      .get();
+    const [snap, adminUids] = await Promise.all([
+      adminDb()
+        .collection(COLLECTIONS.ratings)
+        .where("wodDate", "==", wodDate)
+        .get(),
+      getAdminUids(),
+    ]);
 
     if (snap.empty) return EMPTY;
 
@@ -47,6 +51,9 @@ export async function getRatingSummary(
     let mine: number | null = null;
 
     for (const doc of snap.docs) {
+      // El voto de un admin no cuenta para el promedio del box.
+      if (adminUids.has(doc.id.slice(0, doc.id.lastIndexOf("_")))) continue;
+
       const stars = Number(doc.data().stars);
       if (!Number.isInteger(stars) || stars < 1 || stars > 5) continue;
 

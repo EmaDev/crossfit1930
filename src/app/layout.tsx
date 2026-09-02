@@ -57,9 +57,14 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Tiñe el "chrome" del sistema (status bar de Android y barra superior de la
+  // PWA instalada en iOS) con el rojo del tope del hero, para que la status bar
+  // se lea como parte del header y no como una franja aparte. En claro va el
+  // red-600 del hero; en oscuro, el red-800 que arranca el degradado en `.dark`
+  // (ver `--color-hero-from` en globals.css).
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#dc2626" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: dark)", color: "#991b1b" },
   ],
 };
 

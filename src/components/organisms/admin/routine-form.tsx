@@ -7,6 +7,7 @@ import {
   CollapsibleFormSections,
   DatePicker,
   Input,
+  Select,
   Switch,
   Textarea,
   useToast,
@@ -15,11 +16,14 @@ import {
 import { saveRoutine, type RoutineInput } from "@/lib/actions/routines";
 import {
   ORDERED_WEEKDAYS,
+  dayKind,
   type Exercise,
   type Routine,
+  type RoutineDay,
   type Weekday,
 } from "@/lib/data/routine-types";
 import { PlusIcon, TrashIcon } from "@/components/atoms/icons";
+import { RoutineJsonIo } from "@/components/molecules/routine-json-io";
 
 const WEEKDAY_LABEL: Record<Weekday, string> = {
   lunes: "Lunes",
@@ -33,13 +37,34 @@ const WEEKDAY_LABEL: Record<Weekday, string> = {
 
 const EMPTY_EXERCISE: Exercise = { name: "", detail: "" };
 
-type DayState = { title: string; exercises: Exercise[] } | null;
+/**
+ * Cada día tiene uno de tres modos:
+ * - `training`: hay WOD → se editan título y ejercicios.
+ * - `descanso`: descanso deliberado → se guarda igual, sin ejercicios.
+ * - `desconocida`: todavía no se pasó la rutina → NO se guarda (default).
+ */
+type DayMode = "training" | "descanso" | "desconocida";
+type DayState = { mode: DayMode; title: string; exercises: Exercise[] };
 type DaysState = Record<Weekday, DayState>;
 
+const emptyDay = (): DayState => ({
+  mode: "desconocida",
+  title: "",
+  exercises: [{ ...EMPTY_EXERCISE }],
+});
+
 function initialDaysState(routine: Routine | null): DaysState {
-  const base = Object.fromEntries(ORDERED_WEEKDAYS.map((w) => [w, null])) as DaysState;
+  const base = Object.fromEntries(ORDERED_WEEKDAYS.map((w) => [w, emptyDay()])) as DaysState;
   for (const d of routine?.days ?? []) {
-    base[d.weekday] = { title: d.title, exercises: d.exercises.length ? d.exercises : [EMPTY_EXERCISE] };
+    const kind = dayKind(d); // nunca "desconocida": un día en days[] es training o descanso
+    base[d.weekday] =
+      kind === "training"
+        ? {
+            mode: "training",
+            title: d.title,
+            exercises: d.exercises.length ? d.exercises : [{ ...EMPTY_EXERCISE }],
+          }
+        : { mode: kind, title: d.title, exercises: [{ ...EMPTY_EXERCISE }] };
   }
   return base;
 }
@@ -47,7 +72,8 @@ function initialDaysState(routine: Routine | null): DaysState {
 const REASON_MESSAGE: Record<string, string> = {
   forbidden: "Tu sesión no tiene permisos de admin.",
   "not-configured": "Firebase no está configurado en este entorno.",
-  invalid: "Revisá la fecha, el nombre y que cada día tenga al menos un ejercicio.",
+  invalid:
+    "Revisá la fecha, el nombre y que cada día con entrenamiento tenga título y al menos un ejercicio.",
   error: "Algo falló guardando. Probá de nuevo.",
 };
 
@@ -71,20 +97,30 @@ export function RoutineForm({
   const [days, setDays] = useState<DaysState>(() => initialDaysState(initial));
   const [saving, setSaving] = useState(false);
 
-  const toggleDay = (weekday: Weekday, active: boolean) => {
-    setDays((prev) => ({
-      ...prev,
-      [weekday]: active ? { title: "", exercises: [{ ...EMPTY_EXERCISE }] } : null,
-    }));
+  const setDayMode = (weekday: Weekday, mode: DayMode) => {
+    setDays((prev) => {
+      const cur = prev[weekday];
+      return {
+        ...prev,
+        [weekday]: {
+          ...cur,
+          mode,
+          exercises:
+            mode === "training" && cur.exercises.length === 0
+              ? [{ ...EMPTY_EXERCISE }]
+              : cur.exercises,
+        },
+      };
+    });
   };
 
   const setDayTitle = (weekday: Weekday, title: string) => {
-    setDays((prev) => ({ ...prev, [weekday]: { ...prev[weekday]!, title } }));
+    setDays((prev) => ({ ...prev, [weekday]: { ...prev[weekday], title } }));
   };
 
   const setExercise = (weekday: Weekday, index: number, patch: Partial<Exercise>) => {
     setDays((prev) => {
-      const day = prev[weekday]!;
+      const day = prev[weekday];
       const exercises = day.exercises.map((e, i) => (i === index ? { ...e, ...patch } : e));
       return { ...prev, [weekday]: { ...day, exercises } };
     });
@@ -92,17 +128,42 @@ export function RoutineForm({
 
   const addExercise = (weekday: Weekday) => {
     setDays((prev) => {
-      const day = prev[weekday]!;
-      return { ...prev, [weekday]: { ...day, exercises: [...day.exercises, { ...EMPTY_EXERCISE }] } };
+      const day = prev[weekday];
+      return {
+        ...prev,
+        [weekday]: { ...day, exercises: [...day.exercises, { ...EMPTY_EXERCISE }] },
+      };
     });
   };
 
   const removeExercise = (weekday: Weekday, index: number) => {
     setDays((prev) => {
-      const day = prev[weekday]!;
+      const day = prev[weekday];
       const exercises = day.exercises.filter((_, i) => i !== index);
       return { ...prev, [weekday]: { ...day, exercises } };
     });
+  };
+
+  /** Vuelca un JSON de semana entera al formulario (reemplaza lo que haya). */
+  const importWeek = (routine: Routine) => {
+    setName(routine.name);
+    setType(routine.type || "crossfit");
+    setDescription(routine.description);
+    setDays(initialDaysState(routine));
+  };
+
+  /** Vuelca un JSON de un día al formulario, respetando su `kind` si lo trae. */
+  const importDay = (weekday: Weekday, day: RoutineDay) => {
+    const mode: DayMode =
+      day.kind === "descanso" ? "descanso" : day.kind === "desconocida" ? "desconocida" : "training";
+    setDays((prev) => ({
+      ...prev,
+      [weekday]: {
+        mode,
+        title: day.title,
+        exercises: day.exercises.length ? day.exercises : [{ ...EMPTY_EXERCISE }],
+      },
+    }));
   };
 
   const submit = async () => {
@@ -111,11 +172,12 @@ export function RoutineForm({
       name,
       type,
       description,
-      days: ORDERED_WEEKDAYS.filter((w) => days[w] != null).map((w) => ({
-        weekday: w,
-        title: days[w]!.title,
-        exercises: days[w]!.exercises,
-      })),
+      days: ORDERED_WEEKDAYS.filter((w) => days[w].mode !== "desconocida").map((w) => {
+        const d = days[w];
+        return d.mode === "descanso"
+          ? { weekday: w, kind: "descanso" as const, title: d.title.trim() || "Descanso", exercises: [] }
+          : { weekday: w, kind: "training" as const, title: d.title, exercises: d.exercises };
+      }),
     };
     const iso = date.toISOString().slice(0, 10);
 
@@ -147,6 +209,7 @@ export function RoutineForm({
       defaultOpen: true,
       content: (
         <>
+          <RoutineJsonIo mode="week" onApply={importWeek} />
           {isNewWeek ? (
             <DatePicker
               className="sm:col-span-2"
@@ -178,20 +241,45 @@ export function RoutineForm({
     },
     ...ORDERED_WEEKDAYS.map((weekday): FormSection => {
       const day = days[weekday];
+      const isTraining = day.mode === "training";
+      const sectionDesc =
+        day.mode === "training"
+          ? day.title || "Sin título todavía"
+          : day.mode === "descanso"
+            ? "Descanso"
+            : "Desconocida — rutina no cargada";
       return {
         id: weekday,
         title: WEEKDAY_LABEL[weekday],
-        description: day ? day.title || "Sin título todavía" : "Día de descanso",
-        defaultOpen: day != null,
+        description: sectionDesc,
+        defaultOpen: isTraining,
         content: (
           <>
             <Switch
               className="sm:col-span-2"
-              checked={day != null}
-              onChange={(checked) => toggleDay(weekday, checked)}
+              checked={isTraining}
+              onChange={(checked) => setDayMode(weekday, checked ? "training" : "desconocida")}
               label="Hay entrenamiento este día"
             />
-            {day && (
+            {!isTraining && (
+              <Select
+                className="sm:col-span-2"
+                label="Motivo (sin entrenamiento)"
+                value={day.mode}
+                onChange={(v) => setDayMode(weekday, v as DayMode)}
+                options={[
+                  { value: "desconocida", label: "Desconocida — rutina no cargada" },
+                  { value: "descanso", label: "Descanso" },
+                ]}
+                hint="‘Desconocida’ no se guarda; ‘Descanso’ sí y el atleta lo ve con su ícono."
+              />
+            )}
+            <RoutineJsonIo
+              mode="day"
+              weekday={weekday}
+              onApply={(d) => importDay(weekday, d)}
+            />
+            {isTraining && (
               <>
                 <Input
                   className="sm:col-span-2"

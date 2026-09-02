@@ -6,6 +6,7 @@
 // (ya incluido en el script de package.json).
 import { cert, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 
 const email = process.argv[2];
 if (!email) {
@@ -32,6 +33,11 @@ try {
   const auth = getAuth();
   const user = await auth.getUserByEmail(email);
   await auth.setCustomUserClaims(user.uid, {});
+  // Baja el espejo de Firestore: vuelve a aparecer en el ranking/comentarios.
+  await getFirestore()
+    .collection("crossfit-users")
+    .doc(user.uid)
+    .set({ admin: false }, { merge: true });
   console.log(`OK — ${email} (uid ${user.uid}) ya no es admin.`);
   console.log("El cambio aplica en su próximo login.");
 } catch (err) {

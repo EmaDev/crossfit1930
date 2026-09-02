@@ -64,17 +64,19 @@ export async function getLeaderboard(): Promise<Leaderboard> {
       db.collection(COLLECTIONS.attendance).where("date", ">=", yearStart).get(),
     ]);
 
-    const users: UserBase[] = usersSnap.docs.map((doc) => {
-      const d = doc.data();
-      const name: string = (d.name as string | undefined)?.trim() || "Atleta";
-      return {
-        uid: doc.id,
-        name,
-        currentStreak: d.current_streak ?? 0,
-        maxStreak: d.max_streak ?? 0,
-        totalDays: d.total_attended_days ?? 0,
-      };
-    });
+    const users: UserBase[] = usersSnap.docs
+      .filter((doc) => doc.data().admin !== true) // los admin no van al ranking
+      .map((doc) => {
+        const d = doc.data();
+        const name: string = (d.name as string | undefined)?.trim() || "Atleta";
+        return {
+          uid: doc.id,
+          name,
+          currentStreak: d.current_streak ?? 0,
+          maxStreak: d.max_streak ?? 0,
+          totalDays: d.total_attended_days ?? 0,
+        };
+      });
 
     const yearCount = new Map<string, number>();
     const monthCount = new Map<string, number>();

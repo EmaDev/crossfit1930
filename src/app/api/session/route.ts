@@ -70,6 +70,9 @@ async function ensureUserDoc(decoded: DecodedIdToken): Promise<void> {
     email: decoded.email ?? null,
     name: decoded.name ?? null,
     photo: decoded.picture ?? null,
+    // Espejo del custom claim: la capa `lib/data/*` filtra a los admin de todo
+    // lo que ve el cliente (ranking, comentarios, …). Se refresca en cada login.
+    admin: decoded.admin === true,
   };
 
   await adminDb().runTransaction(async (tx) => {

@@ -22,10 +22,23 @@ export type Exercise = {
   detail: string;
 };
 
+/**
+ * Qué es un día sin WOD:
+ * - `training`: hay entrenamiento (tiene `exercises`).
+ * - `descanso`: descanso deliberado (el coach lo marcó así).
+ * - `desconocida`: todavía no se pasó la rutina de ese día.
+ *
+ * En `days[]` sólo se guardan los `training` y los `descanso`; un día ausente
+ * se interpreta como `desconocida` (ver `dayKind`).
+ */
+export type DayKind = "training" | "descanso" | "desconocida";
+
 export type RoutineDay = {
   weekday: Weekday;
   title: string;
   exercises: Exercise[];
+  /** Ausente en docs viejos: se deriva de `exercises` en `dayKind`. */
+  kind?: DayKind;
 };
 
 export type Routine = {
@@ -58,6 +71,30 @@ export const ORDERED_WEEKDAYS: Weekday[] = [
 ];
 
 export const weekdayIndex = (w: Weekday) => WEEKDAY_INDEX[w];
+
+/** El tipo real de un día: usa `kind` si está, si no lo deriva de `exercises`. */
+export function dayKind(day: RoutineDay): DayKind {
+  if (day.kind) return day.kind;
+  return day.exercises.length > 0 ? "training" : "descanso";
+}
+
+/**
+ * Rutina "todavía no cargada": los 7 días como `desconocida`. Se usa cuando no
+ * hay ningún doc para la semana en curso, en vez de mostrar un ejemplo falso.
+ */
+export function unknownWeekRoutine(): Routine {
+  return {
+    name: "Rutina no cargada",
+    type: "crossfit",
+    description: "Todavía no se cargó la planificación de esta semana.",
+    days: ORDERED_WEEKDAYS.map((weekday) => ({
+      weekday,
+      title: "",
+      exercises: [],
+      kind: "desconocida" as const,
+    })),
+  };
+}
 
 /** `yyyy-mm-dd` del lunes de la semana a la que pertenece `iso` — doc ID de `crossfit-routines`. */
 export function mondayOfWeek(iso: string): string {
