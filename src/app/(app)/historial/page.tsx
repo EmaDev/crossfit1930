@@ -34,7 +34,8 @@ export default async function HistorialPage({
   searchParams: Promise<{ mes?: string }>;
 }) {
   const { mes } = await searchParams;
-  const month = mes && MES_RE.test(mes) ? mes : boxTodayIso().slice(0, 7);
+  const todayIso = boxTodayIso();
+  const month = mes && MES_RE.test(mes) ? mes : todayIso.slice(0, 7);
   const monthStart = `${month}-01`;
   const monthEnd = `${month}-${lastDayOfMonth(month)}`;
 
@@ -58,7 +59,13 @@ export default async function HistorialPage({
       panels={{
         calendario: (
           <div className="pt-1">
-            <HistorialCalendar month={month} routineDays={routineDays} attendedDates={attendedDates} />
+            <HistorialCalendar
+              month={month}
+              routineDays={routineDays}
+              attendedDates={attendedDates}
+              todayIso={todayIso}
+              canMark={!!session}
+            />
           </div>
         ),
         marcas: (

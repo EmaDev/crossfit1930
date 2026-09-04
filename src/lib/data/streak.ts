@@ -50,3 +50,51 @@ export function streakContinues(
   }
   return true;
 }
+
+export type StreakCounters = {
+  current: number;
+  max: number;
+  total: number;
+  /** `yyyy-mm-dd` de la última asistencia, o `null` si no hay ninguna. */
+  last: string | null;
+};
+
+/**
+ * Recalcula los contadores desde CERO a partir de todas las fechas asistidas.
+ *
+ * Hace falta porque marcar un día olvidado (uno anterior a hoy) no se puede
+ * resolver sumando 1 al `current_streak`: una marca en el medio puede unir dos
+ * tramos que estaban cortados, y una al principio no toca la racha actual. El
+ * único resultado correcto sale de recorrer el historial completo — que es
+ * corto (un puñado de días por semana), así que se lee entero en la
+ * transacción de la marca.
+ *
+ * Aplica la misma regla que el camino incremental (`streakContinues` entre dos
+ * asistencias consecutivas), así que marcar HOY da exactamente lo mismo que
+ * antes. `trainingWeekdays` sale de la rutina vigente: es la misma aproximación
+ * que ya hacía la action —se asume que el box entrena los mismos weekdays toda
+ * la temporada—, porque releer la rutina de cada semana del historial sería una
+ * query por semana.
+ */
+export function recomputeStreak(
+  dates: string[],
+  todayIso: string,
+  trainingWeekdays: Set<number>,
+): StreakCounters {
+  const unique = [...new Set(dates)].sort();
+  if (unique.length === 0) return { current: 0, max: 0, total: 0, last: null };
+
+  let run = 1;
+  let max = 1;
+  for (let i = 1; i < unique.length; i += 1) {
+    run = streakContinues(unique[i - 1], unique[i], trainingWeekdays) ? run + 1 : 1;
+    if (run > max) max = run;
+  }
+
+  // El tramo que termina en la última asistencia sólo sigue siendo la racha
+  // ACTUAL si desde ahí hasta hoy no se perdió ningún día de entrenamiento.
+  const last = unique[unique.length - 1];
+  const alive = streakContinues(last, todayIso, trainingWeekdays);
+
+  return { current: alive ? run : 0, max, total: unique.length, last };
+}

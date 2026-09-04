@@ -5,22 +5,33 @@ import { useRouter } from "next/navigation";
 import { BottomSheet, CalendarGrid, type CalendarEvent } from "lib-kit-components";
 import type { HistorialDay } from "@/lib/data/historial";
 import { DayView } from "@/components/organisms/day-view";
+import { MarkPastDay } from "@/components/organisms/mark-past-day";
 
 /**
  * Calendario mensual de Historial. El mes navega por URL (`?mes=yyyy-mm`), no
  * con estado propio: cada mes es una navegación de Next.js real (server
  * re-fetch de `getRoutineDaysInRange`), coherente con el resto de la app
  * SSR-first — no hay fetch de datos en el cliente acá.
+ *
+ * El sheet de cada día es además donde se recupera una asistencia olvidada
+ * (<MarkPastDay>): sólo se abre para días que tienen WOD cargado, así que no
+ * se puede marcar un descanso.
  */
 export function HistorialCalendar({
   month,
   routineDays,
   attendedDates,
+  todayIso,
+  canMark,
 }: {
   /** `yyyy-mm` del mes que se está mostrando (ya resuelto server-side). */
   month: string;
   routineDays: HistorialDay[];
   attendedDates: string[];
+  /** Hoy en la zona del box, resuelto en el server. */
+  todayIso: string;
+  /** `false` para un invitado: no tiene racha que sumar. */
+  canMark: boolean;
 }) {
   const router = useRouter();
   const attended = useMemo(() => new Set(attendedDates), [attendedDates]);
@@ -39,8 +50,7 @@ export function HistorialCalendar({
   }));
 
   const openDate = (date: Date) => {
-    const iso = date.toISOString().slice(0, 10);
-    const match = byDate.get(iso);
+    const match = byDate.get(localIso(date));
     if (match) setSelected(match);
   };
 
@@ -69,8 +79,34 @@ export function HistorialCalendar({
         }) : undefined}
         size="lg"
       >
-        {selected && <DayView day={selected.day} routineName={selected.routineName} />}
+        {selected && (
+          <div className="flex flex-col gap-4">
+            <DayView day={selected.day} routineName={selected.routineName} />
+            {canMark && (
+              <MarkPastDay
+                // `key`: al cambiar de día el estado local ("marcado") arranca
+                // de nuevo desde lo que dice el server para esa fecha.
+                key={selected.dateIso}
+                dateIso={selected.dateIso}
+                todayIso={todayIso}
+                attended={attended.has(selected.dateIso)}
+              />
+            )}
+          </div>
+        )}
       </BottomSheet>
     </>
   );
+}
+
+/**
+ * `Date` → `yyyy-mm-dd` con los campos LOCALES. `toISOString()` no sirve acá:
+ * convierte a UTC, así que un día del calendario se podría leer como el
+ * anterior o el siguiente según la zona del dispositivo — y esta fecha es la
+ * que se manda a marcar asistencia.
+ */
+function localIso(date: Date): string {
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${m}-${d}`;
 }
