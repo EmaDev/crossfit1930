@@ -23,6 +23,9 @@ import { COLLECTIONS, attendanceId } from "@/lib/firebase/collections";
  *
  * Sin `date` marca HOY; con `date` marca un día OLVIDADO, siempre dentro de la
  * ventana de `isMarkableDate` (nunca el futuro, nunca más viejo que unos días).
+ * La ventana es la ÚNICA restricción: un día sin rutina cargada se puede marcar
+ * igual, porque que el coach no haya subido el WOD no significa que el box no
+ * haya abierto ni que la persona no haya entrenado.
  * En ese caso los contadores no se pueden incrementar —una marca en el medio
  * del historial puede unir dos tramos que estaban cortados—, así que en los dos
  * casos se recalculan con `recomputeStreak` leyendo todas las marcas del

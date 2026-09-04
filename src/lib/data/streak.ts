@@ -10,16 +10,6 @@ import "server-only";
 const DAY_MS = 86_400_000;
 
 /**
- * Día de la semana (0 = domingo … 6 = sábado) de una fecha `yyyy-mm-dd`.
- * Vía `Date.UTC` para que el resultado no dependa de la zona horaria en la que
- * corra el servidor: una fecha "pelada" tiene el mismo weekday en todos lados.
- */
-export function weekdayIndexForIso(iso: string): number {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-}
-
-/**
  * ¿La racha sigue viva entre la última asistencia (`lastIso`) y hoy
  * (`todayIso`)?
  *

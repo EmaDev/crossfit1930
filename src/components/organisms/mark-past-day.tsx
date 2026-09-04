@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Button, useSnackbar } from "lib-kit-components";
-import { markAttendance } from "@/lib/actions/attendance";
+import { Button } from "lib-kit-components";
 import {
   ATTENDANCE_BACKFILL_DAYS,
   isMarkableDate,
 } from "@/lib/data/attendance-window";
+import { useMarkAttendance } from "@/lib/hooks/use-mark-attendance";
 import { CheckIcon } from "@/components/atoms/icons";
 
 /**
@@ -25,8 +23,8 @@ import { CheckIcon } from "@/components/atoms/icons";
  *   - más viejo que la ventana → aviso de por qué ya no se puede
  *   - futuro → nada (todavía no se entrenó)
  *
- * Después de marcar hace `router.refresh()`: la racha del header, el color del
- * día en el calendario y la lista de "Mis marcas" salen todos del server.
+ * La lista de olvidados del tab de Historial (<ForgottenDays>) hace lo mismo
+ * fila por fila; los dos comparten `useMarkAttendance`.
  */
 export function MarkPastDay({
   dateIso,
@@ -39,32 +37,7 @@ export function MarkPastDay({
   todayIso: string;
   attended: boolean;
 }) {
-  const router = useRouter();
-  const { snack } = useSnackbar();
-  const [done, setDone] = useState(attended);
-  const [pending, startTransition] = useTransition();
-
-  const mark = () =>
-    startTransition(async () => {
-      const res = await markAttendance(dateIso);
-
-      // `not-configured` (Firebase sin credenciales en dev) se toma como ok,
-      // igual que en <MarkDayDock>: no hay nada que persistir.
-      if (res.ok || res.reason === "not-configured") {
-        setDone(true);
-        snack({ message: "Asistencia marcada. Se sumó a tu racha.", variant: "success" });
-        router.refresh();
-        return;
-      }
-
-      snack({
-        message:
-          res.reason === "out-of-range"
-            ? "Ese día ya no se puede marcar."
-            : "No se pudo marcar la asistencia. Probá de nuevo en un momento.",
-        variant: "error",
-      });
-    });
+  const { done, pending, mark } = useMarkAttendance(dateIso, attended);
 
   if (done) {
     return (

@@ -1,11 +1,13 @@
 import "server-only";
 
+import { attendanceWindowStart } from "@/lib/data/attendance-window";
 import { getRoutine } from "@/lib/data/wods";
 import {
   addDaysIso,
   dayKind,
   mondayOfWeek,
   weekdayIndex,
+  weekdayIndexForIso,
   type RoutineDay,
 } from "@/lib/data/routine-types";
 import { isAdminConfigured } from "@/lib/firebase/admin";
@@ -53,4 +55,60 @@ export async function getRoutineDaysInRange(
   }
 
   return result.sort((a, b) => a.dateIso.localeCompare(b.dateIso));
+}
+
+export type ForgottenDay = {
+  dateIso: string;
+  /**
+   * Título del WOD de ese día, o `null` si la rutina de esa semana no se cargó.
+   * Un día sin rutina TAMBIÉN se puede marcar: que el coach no la haya subido
+   * no significa que no se haya entrenado.
+   */
+  title: string | null;
+};
+
+/**
+ * Los días de la ventana de asistencia (ver `ATTENDANCE_BACKFILL_DAYS`) que
+ * quedaron SIN marcar — el "historial de olvidados" del tab de Historial.
+ *
+ * Entran los días de entrenamiento y también los que no tienen rutina cargada
+ * (`title: null`). Se descartan sólo los descansos que el coach marcó
+ * explícitamente: ahí el box no abrió, así que no hay nada que recuperar.
+ *
+ * Cuesta una lectura por semana tocada (dos, con una ventana de 7 días), no una
+ * por día: las rutinas se agrupan por su lunes.
+ */
+export async function getForgottenDays(
+  attendedDates: string[],
+  todayIso: string,
+): Promise<ForgottenDay[]> {
+  const attended = new Set(attendedDates);
+
+  const dates: string[] = [];
+  for (let iso = attendanceWindowStart(todayIso); iso <= todayIso; iso = addDaysIso(iso, 1)) {
+    if (!attended.has(iso)) dates.push(iso);
+  }
+  if (dates.length === 0) return [];
+
+  const mondays = [...new Set(dates.map(mondayOfWeek))];
+  const routines = new Map(
+    await Promise.all(mondays.map(async (m) => [m, await getRoutine(m)] as const)),
+  );
+
+  const forgotten: ForgottenDay[] = [];
+  for (const dateIso of dates) {
+    const routine = routines.get(mondayOfWeek(dateIso));
+    // Semana sin doc → día "desconocida": se ofrece igual, sin título.
+    if (!routine) {
+      forgotten.push({ dateIso, title: null });
+      continue;
+    }
+
+    const day = routine.days.find((d) => weekdayIndex(d.weekday) === weekdayIndexForIso(dateIso));
+    if (day && dayKind(day) === "descanso") continue; // descanso deliberado
+    forgotten.push({ dateIso, title: day && dayKind(day) === "training" ? day.title : null });
+  }
+
+  // Más reciente primero: el olvido de ayer es el que más importa.
+  return forgotten.sort((a, b) => b.dateIso.localeCompare(a.dateIso));
 }

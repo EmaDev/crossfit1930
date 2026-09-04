@@ -14,8 +14,10 @@ import { MarkPastDay } from "@/components/organisms/mark-past-day";
  * SSR-first — no hay fetch de datos en el cliente acá.
  *
  * El sheet de cada día es además donde se recupera una asistencia olvidada
- * (<MarkPastDay>): sólo se abre para días que tienen WOD cargado, así que no
- * se puede marcar un descanso.
+ * (<MarkPastDay>). Se abre para CUALQUIER día ya pasado, tenga rutina cargada o
+ * no: si el coach no subió el WOD de ese día el box igual abrió, así que la
+ * asistencia se tiene que poder marcar. Un día futuro sin rutina no abre nada
+ * —no habría qué mostrar ni qué marcar—.
  */
 export function HistorialCalendar({
   month,
@@ -39,7 +41,8 @@ export function HistorialCalendar({
     () => new Map(routineDays.map((d) => [d.dateIso, d])),
     [routineDays],
   );
-  const [selected, setSelected] = useState<HistorialDay | null>(null);
+  // Sólo la fecha: el WOD de ese día puede no existir (semana sin cargar).
+  const [selected, setSelected] = useState<string | null>(null);
 
   const events: CalendarEvent[] = routineDays.map((d) => ({
     id: d.dateIso,
@@ -50,9 +53,14 @@ export function HistorialCalendar({
   }));
 
   const openDate = (date: Date) => {
-    const match = byDate.get(localIso(date));
-    if (match) setSelected(match);
+    const iso = localIso(date);
+    // Un día futuro sólo se abre si tiene WOD cargado (para leer la planificación).
+    if (iso > todayIso && !byDate.has(iso)) return;
+    setSelected(iso);
   };
+
+  // `null` = día sin rutina cargada (o de una semana que el coach no subió).
+  const selectedDay = selected ? byDate.get(selected) ?? null : null;
 
   const changeMonth = (next: Date) => {
     const iso = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
@@ -72,7 +80,7 @@ export function HistorialCalendar({
       <BottomSheet
         open={selected != null}
         onClose={() => setSelected(null)}
-        title={selected ? new Date(`${selected.dateIso}T00:00:00`).toLocaleDateString("es-AR", {
+        title={selected ? new Date(`${selected}T00:00:00`).toLocaleDateString("es-AR", {
           weekday: "long",
           day: "numeric",
           month: "long",
@@ -81,15 +89,21 @@ export function HistorialCalendar({
       >
         {selected && (
           <div className="flex flex-col gap-4">
-            <DayView day={selected.day} routineName={selected.routineName} />
+            {selectedDay ? (
+              <DayView day={selectedDay.day} routineName={selectedDay.routineName} />
+            ) : (
+              <p className="rounded-xl border border-border bg-surface-alt px-4 py-5 text-center text-sm text-muted">
+                No se cargó el WOD de este día. Si entrenaste igual, marcá tu asistencia.
+              </p>
+            )}
             {canMark && (
               <MarkPastDay
                 // `key`: al cambiar de día el estado local ("marcado") arranca
                 // de nuevo desde lo que dice el server para esa fecha.
-                key={selected.dateIso}
-                dateIso={selected.dateIso}
+                key={selected}
+                dateIso={selected}
                 todayIso={todayIso}
-                attended={attended.has(selected.dateIso)}
+                attended={attended.has(selected)}
               />
             )}
           </div>

@@ -157,6 +157,16 @@ export function mondayOfWeek(iso: string): string {
   return date.toISOString().slice(0, 10);
 }
 
+/**
+ * Día de la semana (0 = domingo … 6 = sábado) de una fecha `yyyy-mm-dd`.
+ * Vía `Date.UTC` para que el resultado no dependa de la zona horaria en la que
+ * corra el servidor: una fecha "pelada" tiene el mismo weekday en todos lados.
+ */
+export function weekdayIndexForIso(iso: string): number {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
 /** `iso` (`yyyy-mm-dd`) + `days` días, sin depender de ninguna zona horaria. */
 export function addDaysIso(iso: string, days: number): string {
   const [y, m, d] = iso.split("-").map(Number);
